@@ -16,8 +16,6 @@ pub fn main() !void {
 
     var window: *glfw.GLFWwindow = undefined;
 
-    _ = glfw.glfwSetErrorCallback(glfw_error_callback);
-
     // free error callback
     defer _ = glfw.glfwSetErrorCallback(null);
 
@@ -49,8 +47,6 @@ pub fn main() !void {
 
     MouseListener.attach(window);
 
-    glfw_set_key_polling(window);
-
     glfw.glfwShowWindow(window);
 
     if (glad.gladLoadGL(@as(glad.GLADloadfunc, glfw.glfwGetProcAddress)) == 1) {
@@ -58,31 +54,18 @@ pub fn main() !void {
         return;
     }
 
-    glad.glClearColor(1.0, 1.0, 1.0, 1.0);
+    glad.glClearColor(207.0 / 255.0, 155.0 / 255.0, 206.0 / 255.0, 1.0);
 
+    var c: i32 = 1;
     while (glfw.glfwWindowShouldClose(window) != glfw.GLFW_TRUE) {
         glfw.glfwPollEvents();
+
+        if (MouseListener.isDragging()) {
+            print("mouse is dragging {d}\n", .{c});
+            c += 1;
+        }
 
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
         glfw.glfwSwapBuffers(window);
     }
-}
-
-fn glfw_error_callback(code: c_int, msg: [*c]const u8) callconv(.C) void {
-    _ = code;
-    print("glfw error: {s}\n", .{msg});
-}
-
-fn key_callback(window: ?*glfw.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
-    _ = window;
-    _ = key;
-    _ = scancode;
-    _ = action;
-    _ = mods;
-
-    // print("a keys is being pressed\n", .{});
-}
-
-fn glfw_set_key_polling(window: *glfw.GLFWwindow) void {
-    _ = glfw.glfwSetKeyCallback(window, key_callback);
 }
