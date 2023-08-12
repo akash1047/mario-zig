@@ -1,71 +1,65 @@
 const std = @import("std");
 const print = std.debug.print;
 const MouseListener = @import("./MouseListener.zig").MouseListener;
-
-const glfw = @cImport({
-    @cDefine("GLFW_INCLUDE_NONE", "");
-    @cInclude("GLFW/glfw3.h");
-});
-
+const KeyListener = @import("./KeyListener.zig").KeyListener;
+const glfw = @import("./glfw.zig");
+const Window = glfw.Window;
 const glad = @import("./glad.zig");
 
 pub fn main() !void {
-    const width = 1920;
-    const height = 1080;
-    const title = "Mario";
+    var window: Window = undefined;
 
-    var window: *glfw.GLFWwindow = undefined;
+    try glfw.init();
+    defer glfw.terminate();
 
-    // free error callback
-    defer _ = glfw.glfwSetErrorCallback(null);
+    print("hello {s}\n", .{glfw.api.glfwGetVersionString()});
 
-    if (glfw.glfwInit() != glfw.GLFW_TRUE) {
-        print("failed to initiallize glfw\n", .{});
-        return;
-    }
+    glfw.defaultWindowHints();
+    glfw.window_hint.visiable(false);
+    glfw.window_hint.resizable(true);
+    glfw.window_hint.mazimized(false);
 
-    // terminate glfw library at the end of this function
-    defer glfw.glfwTerminate();
+    window = try Window.new(1920, 1080, "Mario");
+    defer window.destroy();
 
-    glfw.glfwDefaultWindowHints();
-    glfw.glfwWindowHint(glfw.GLFW_VISIBLE, glfw.GLFW_FALSE);
-    glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, glfw.GLFW_TRUE);
-    glfw.glfwWindowHint(glfw.GLFW_MAXIMIZED, glfw.GLFW_TRUE);
+    window.makeContextCurrent();
+    glfw.swapInterval(1);
 
-    window = if (glfw.glfwCreateWindow(width, height, title, null, null)) |value|
-        value
-    else {
-        print("failed to create window\n", .{});
-        return;
-    };
+    MouseListener.attach(window.ptr);
+    KeyListener.attach(window.ptr);
 
-    // destroy window at the end of this function
-    defer glfw.glfwDestroyWindow(window);
+    window.show();
 
-    glfw.glfwMakeContextCurrent(window);
-    glfw.glfwSwapInterval(1);
-
-    MouseListener.attach(window);
-
-    glfw.glfwShowWindow(window);
-
-    if (glad.gladLoadGL(@as(glad.GLADloadfunc, glfw.glfwGetProcAddress)) == 1) {
+    if (glad.gladLoadGL(@as(glad.GLADloadfunc, glfw.api.glfwGetProcAddress)) == 1) {
         print("failed to load gl bindings\n", .{});
         return;
     }
 
     glad.glClearColor(207.0 / 255.0, 155.0 / 255.0, 206.0 / 255.0, 1.0);
 
-    var c: i32 = 1;
-    while (glfw.glfwWindowShouldClose(window) != glfw.GLFW_TRUE) {
-        glfw.glfwPollEvents();
+    var begin_time = glfw.api.glfwGetTime();
+    var end_time = glfw.api.glfwGetTime();
 
-        if (MouseListener.isDragging()) {
-            print("mouse is dragging {d}\n", .{c});
-            c += 1;
+    while (!window.shouldClose()) {
+        glfw.pollEvents();
+
+        if (KeyListener.isKeyPressed(glfw.api.GLFW_KEY_ESCAPE) or KeyListener.isKeyPressed(glfw.api.GLFW_KEY_SPACE)) {
+            break;
         }
 
+        const r = @mod(MouseListener.x(), 255.0) / 255.0;
+        const g = @mod(MouseListener.y(), 255.0) / 255.0;
+        const b = @mod(MouseListener.x() + MouseListener.y(), 255.0) / 255.0;
+
+        glad.glClearColor(r, g, b, 1.0);
+
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
-        glfw.glfwSwapBuffers(window);
+        window.swapBuffers();
+
+        end_time = glfw.api.glfwGetTime();
+        const dt = end_time - begin_time;
+        begin_time = end_time;
+
+        print("\rfps {d:.2}", .{1.0 / dt});
     }
 }

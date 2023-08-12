@@ -44,27 +44,27 @@ pub const MouseListener = struct {
     }
 
     pub fn x() f32 {
-        return x_pos;
+        return @floatCast(f32, x_pos);
     }
 
     pub fn y() f32 {
-        return y_pos;
+        return @floatCast(f32, y_pos);
     }
 
     pub fn dx() f32 {
-        return last_x - x_pos;
+        return @floatCast(f32, last_x - x_pos);
     }
 
     pub fn dy() f32 {
-        return last_y - y_pos;
+        return @floatCast(f32, last_y - y_pos);
     }
 
     pub fn scrollX() f32 {
-        return scroll_x;
+        return @floatCast(f32, scroll_x);
     }
 
     pub fn scrollY() f32 {
-        return scroll_y;
+        return @floatCast(f32, scroll_y);
     }
 
     pub fn isDragging() bool {
